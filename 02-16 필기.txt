@@ -1,0 +1,1095 @@
+﻿문제 85. 이름과 월급과 부서위치를 출력하시오 !
+
+	x <- merge(emp, dept, by='deptno')
+	x[, c("ename", "sal", "loc")]
+	
+	    ename  sal      loc
+	1    KING 5000 NEW YORK
+	2  MILLER 1300 NEW YORK
+	3   CLARK 2450 NEW YORK
+	4   SMITH  800   DALLAS
+	5   JONES 2975   DALLAS
+	6    FORD 3000   DALLAS
+	7   ADAMS 1100   DALLAS
+	8   SCOTT 3000   DALLAS
+	9   ALLEN 1600  CHICAGO
+	10  BLAKE 2850  CHICAGO
+	11 MARTIN 1250  CHICAGO
+	12 TURNER 1500  CHICAGO
+	13   WARD 1250  CHICAGO
+	14  JAMES  950  CHICAGO
+
+
+
+
+
+문제 86. 부서위치, 부서위치별 토탈월급을 출력하시오 !
+
+	#세로
+	# x <- merge(emp, dept, by='deptno', all.y=T)	# BOSTON을 출력하고 싶을 때
+	# aggregate(sal~loc, x, sum, na.action=na.pass)	# BOSTON을 출력하고 싶을 때
+	aggregate(sal~loc, x, sum)
+
+
+	       loc   sal
+	1  CHICAGO  9400
+	2   DALLAS 10875
+	3 NEW YORK  8750
+	
+	#가로
+	x1 <- tapply(x$sal, x$loc, sum)
+	x1
+	
+	  BOSTON  CHICAGO   DALLAS NEW YORK 
+	      NA     9400    10875     8750 
+
+
+
+
+
+문제 87. 위의 결과를 구글 막대 그래프로 그리시오 !
+
+	x2 <- aggregate(sal~loc, x, sum, na.action=na.pass)
+	x2
+	x3 <- gvisBarChart(x2)
+	plot(x3)
+
+
+
+
+
+
+문제 88. 아래와 같이 결과를 출력하시오 !
+	 (입사한 년도별 부서위치별 토탈월급을 출력하시오 !)
+
+	x <- merge(emp, dept, by = "deptno")
+	tapply(x$sal, list(x$loc, year(x$hiredate)), sum)
+	
+	         1980 1981 1982 1987
+	BOSTON     NA   NA   NA   NA
+	CHICAGO    NA 9400   NA   NA
+	DALLAS    800 5975   NA 4100
+	NEW YORK   NA 7450 1300   NA
+
+
+
+
+
+문제 89. 위의 결과 데이터를 일반 막대 그래프로 그리시오 !
+
+	x <- merge(emp, dept, by = "deptno")
+	x1 <- tapply(x$sal, list(x$loc, year(x$hiredate)), sum)
+	x1[is.na(x1)] <- 0
+	barplot(x1, col=rainbow(4), beside=T, legend=rownames(x1))
+
+
+
+
+
+
+문제 90. 지하철 1~4호선 승하차 승객수.csv를 R로 로드해서 line no 컬럼과 Time컬럼을 이용해서 구글 
+	 모션차트를 그리시오 !
+
+	line <- read.csv("c:\\R\\1-4호선승하차승객수.csv")
+	head(line)
+	t1 <- gvisMotionChart(line, idvar="line_no", timevar="time")
+	plot(t1)
+
+
+
+
+
+문제 91. 지하철 5-8호선.csv파일을 내려받고 구글 모션 차트를 그리시오 !
+
+	line58 <- read.csv("c:\\R\\서울지하철_5-8호선_이용현황_시간대별.csv")
+	head(line58)
+	t2 <- gvisMotionChart(line58, idvar="호선명", timevar="시간")
+
+
+
+
+
+문제 91. 지하철 5-8호선.csv파일을 내려받고 구글 모션 차트를 그리시오 !
+
+	line58 <- read.csv("c:\\R\\서울지하철_5-8호선_이용현황_시간대별.csv")
+	head(line58)
+	t2 <- gvisMotionChart(line58, idvar="호선명", timevar="시간")
+	plot(t2)
+
+
+
+
+
+
+문제92. 아래의 SQL의 결과를 R로 구현
+
+	SQL> select ename, sal, deptno from emp
+		where deptno in (10,20)
+		union all
+		select ename, sal, deptno from emp
+		where deptno=10;
+
+	rbind(emp[emp$deptno %in% c(10,20), c("ename", "sal", "deptno")],
+	      emp[emp$deptno==10, c("ename","sal", "deptno")]
+	      )
+
+	     ename  sal deptno
+	1    SMITH  800     20
+	4    JONES 2975     20
+	7    CLARK 2450     10
+	8    SCOTT 3000     20
+	9     KING 5000     10
+	11   ADAMS 1100     20
+	13    FORD 3000     20
+	14  MILLER 1300     10
+	71   CLARK 2450     10
+	91    KING 5000     10
+	141 MILLER 1300     10
+
+
+
+
+
+문제 93. 부서번호, 부서번호별 토탈얼급을 아래와 같이 출력하는 SQL을 R로 구현하시오 !
+
+	SQL> select deptno, sum(sal)
+	        from emp
+	        group by rollup(deptno);
+	
+	rbind(aggregate(sal~deptno, emp, sum), c( "토탈값 : ", sum(emp$sal)))
+	
+	     deptno   sal
+	1        10  8750
+	2        20 10875
+	3        30  9400
+	4        70  3200
+	5 토탈값 :  32225
+
+
+
+
+
+문제 94. 아래의 SQL의 결과를 R로 구현하시오 !
+
+	SQL> select ename, sal, deptno
+		from emp
+		where deptno in (10,20)
+	     union
+	     select ename, sal, deptno
+		from emp
+		where deptno = 10;
+	
+	unique(rbind(emp[emp$deptno %in% c(10,20), c("ename", "sal", "deptno")],
+	      emp[emp$deptno==10, c("ename","sal", "deptno")]))
+
+	※ 설명 : union all과 union의 다른점은 union은 중복제거가 된다.
+
+	    ename  sal deptno
+	1   SMITH  800     20
+	4   JONES 2975     20
+	7   CLARK 2450     10
+	8   SCOTT 3000     20
+	9    KING 5000     10
+	11  ADAMS 1100     20
+	13   FORD 3000     20
+	14 MILLER 1300     10
+
+
+
+
+문제 95. 아래의 SQL의 결과를 R로 구현하시오 !
+
+	SQL> select ename, sal, deptno
+	        from emp
+	        where deptno in (10, 20)
+	     minus
+	     select ename, sal, deptno
+	        from emp
+	        where deptno = 10;
+	
+	x <- setdiff(emp[emp$deptno %in% c(10, 20), "ename"], emp[emp$deptno == 10, "ename"])
+	emp[emp$ename %in% x, c("ename", "sal", "deptno")]
+	
+	   ename  sal deptno
+	1  SMITH  800     20
+	4  JONES 2975     20
+	8  SCOTT 3000     20
+	11 ADAMS 1100     20
+	13  FORD 3000     20
+
+
+
+
+
+문제 96. 아래의 SQL의 결과를 R로 구현하시오 !
+
+	SQL> select ename, sal, deptno
+	        from emp
+	        where deptno in (10, 20)
+	     intersect
+	     select ename, sal, deptno
+	        from emp
+	        where deptno = 10;
+	
+	x <- intersect(emp[emp$deptno %in% c(10, 20), "ename"], emp[emp$deptno == 10, "ename"])
+	emp[emp$ename %in% x, c("ename", "sal", "deptno")]
+	
+	    ename  sal deptno
+	7   CLARK 2450     10
+	9    KING 5000     10
+	14 MILLER 1300     10
+
+
+
+
+
+
+
+
+
+
+
+
+■ R로 서브쿼리 구현하기
+
+	* 오라클의 서브쿼리 3가지
+		1. single row subquery
+		2. multiple row subquery
+		3. multiplecolumn subquery
+
+
+
+문제 97. JONES의 월급보다 더 많은 월급을 받는 사원들의 이름과 월급을 출력하시오 !
+
+	SQL> select ename, sal
+	        from emp
+	        where sal > (select sal from emp where ename = 'JONES');
+	
+	x <- emp[emp$ename =="JONES", c("sal")]
+	x1 <- emp[emp$sal >= x, c("ename", "sal")]
+	x1
+	
+	   ename  sal
+	4  JONES 2975
+	8  SCOTT 3000
+	9   KING 5000
+	13  FORD 3000
+	15  JACK 3200
+
+
+
+
+
+문제 98. 사원 테이블에서 가장 많은 월급을 받는 사원의 이름과 월급과 직업을 출력하시오 !
+
+	x <- max(emp$sal)
+	x1 <- emp[emp$sal >= x, c("ename", "sal")]
+	x1
+	
+	  ename  sal
+	9  KING 5000
+
+
+
+
+
+문제 99. 전국에서 등록금이 가장 비싼 학교이름과 등록금을 출력하시오 !
+	 (전국_대학별등록금통계_현황.csv)
+
+	univ <- read.csv("전국_대학별등록금통계_현황.csv", header=T)
+	head(univ)
+	x <- max(univ$등록금.A.B.)
+	univ[univ$등록금.A.B. >= x, c("학교명", "등록금.A.B.")]
+	
+	                  학교명 등록금.A.B.
+	86 명지대학교 자연캠퍼스        9117
+
+
+
+
+
+문제 100. KING에게 보고하는 사원들의 이름과 월급을 출력하시오 !
+
+	SQL> select ename, sal
+	        from emp
+	        where mgr = (select empno from emp where ename = 'KING');
+	
+	king_empno <- emp[emp$ename =="KING", c("empno")]
+	king_empno
+	na.omit(emp[emp$mgr == king_empno, c("ename", "sal")])
+	
+	  ename  sal
+	4 JONES 2975
+	6 BLAKE 2850
+	7 CLARK 2450
+
+
+
+
+
+문제 101. 관리자인 사원들의 이름을 출력하시오 !
+
+	emp[emp$empno %in% emp$mgr, c("ename")]
+	
+	[1] JONES BLAKE CLARK SCOTT KING  FORD 
+
+
+
+
+문제 102. 관리지가 아닌 사원들의 이름을 출력하시오 !
+
+	SQL> select ename
+	        from emp
+	        where empno not in (select mgr from emp where mgr is not null);
+
+	emp[!emp$empno %in% emp$mgr, c("ename")]
+	
+	[1] SMITH  ALLEN  WARD   MARTIN TURNER ADAMS  JAMES  MILLER JACK 
+
+
+
+
+
+
+문제 103. 작년에 아파트에서 가장 많이 발생한 범죄 유형이 무엇인지 출력하시오 !(crime_loc.csv 사용)
+
+	head(crime_loc)
+	x <- max(crime_loc[crime_loc$장소 == "아파트", c("건수")])
+	crime_loc[crime_loc$건수 == x, c("범죄")]
+	
+	[1] 절도
+
+
+
+
+문제 104. (점심시간 문제) 강력범죄가 가장 많이 발생하는 요일은 언제인가? (crime_day.csv를 로드받고 하세요)
+
+	crime_day <- read.csv("crime_day.csv", header = T)
+	head(crime_day)
+	x <- max(crime_day[crime_day$C_C == "강력범죄 ", c("CNT")])
+	crime_day[crime_day$CNT == x & crime_day$C_C == "강력범죄 ", c("DAY")]
+	
+	[1] SAT
+
+
+
+
+문제 104. (점심시간 문제) 강력범죄가 가장 많이 발생하는 요일은 언제인가? (crime_day.csv를 로드받고 하세요)
+
+	crime_day <- read.csv("crime_day.csv", header = T)
+	head(crime_day)
+	x <-crime_day[crime_day$C_C == "강력범죄 ",]
+	x1 <- aggregate(CNT~DAY, x, sum)
+	x1[x1$CNT == max(x1$CNT), c("DAY")]
+
+
+
+
+
+
+
+
+
+■ 순위 출력을 R로 구현하는 방법
+
+		SQL		vs		R
+	     dense_rank			       rank
+
+
+
+문제 105. 이름, 월급, 월급에 대한 순위를 출력하시오 !
+
+	data.table(emp$ename, emp$sal, rank(-emp$sal, ties.method="min"))
+
+	※ min : 오라클의 rank와 같다.
+	   first : 오라클의 rank와 같은데 순위가 같은 데이터가 있으면 인덱스 순서가 먼저 나온 데이터를
+		   높은 순위로 부여한다.
+
+	        V1   V2 V3
+	 1:  SMITH  800 15
+	 2:  ALLEN 1600  8
+	 3:   WARD 1250 11
+	 4:  JONES 2975  5
+	 5: MARTIN 1250 11
+	 6:  BLAKE 2850  6
+	 7:  CLARK 2450  7
+	 8:  SCOTT 3000  3
+	 9:   KING 5000  1
+	10: TURNER 1500  9
+	11:  ADAMS 1100 13
+	12:  JAMES  950 14
+	13:   FORD 3000  3
+	14: MILLER 1300 10
+	15:   JACK 3200  2
+
+
+
+
+
+문제 106. 위의 결과를 다시 출력하는데 순위를 1위부터 정렬해서 출력하시오 !
+
+	x <- data.table(ename=emp$ename, sal=emp$sal, rank=rank(-emp$sal, ties.method="min"))
+	orderBy( ~rank, x)
+	
+	     ename  sal rank
+	 1:   KING 5000    1
+	 2:   JACK 3200    2
+	 3:  SCOTT 3000    3
+	 4:   FORD 3000    3
+	 5:  JONES 2975    5
+	 6:  BLAKE 2850    6
+	 7:  CLARK 2450    7
+	 8:  ALLEN 1600    8
+	 9: TURNER 1500    9
+	10: MILLER 1300   10
+	11:   WARD 1250   11
+	12: MARTIN 1250   11
+	13:  ADAMS 1100   13
+	14:  JAMES  950   14
+	15:  SMITH  800   15
+
+
+
+
+문제 107. 여자들이 많이 걸리는 암과 건수와 순위를 출력하시오 !
+	cancer <- read.csv("cancer.csv", header = T)
+	head(cancer)
+	cancer2 <- cancer[cancer$성별 == "여자" & cancer$암종 != "모든암", ]
+	cancer2
+	x <- data.table(암종=cancer2$암종, 환자수=cancer2$환자수, \
+			  순위=rank(-cancer2$환자수,  ties.method="min"))
+	orderBy(~순위, x)
+
+	                암종 환자수 순위
+	 1:           갑상선 217874    1
+	 2:             유방 131581    2
+	 3:             대장  69971    3
+	 4:               위  69490    4
+	 5:         자궁경부  43523    5
+	 6:          기타 암  37312    6
+	 7:               폐  19058    7
+	 8:         자궁체부  15191    8
+	 9:             난소  14171    9
+	10:               간  12968   10
+	11:   비호지킨림프종  12127   11
+	12:             신장   8464   12
+	13: 담낭 및 기타담도   7246   13
+	14:           백혈병   6674   14
+	15:       구강및인두   5523   15
+	16:             방광   4743   16
+	17: 뇌 및 중추신경계   4118   17
+	18:             췌장   3229   18
+	19:    다발성 골수종   1800   19
+	20:             식도    730   20
+	21:     호지킨림프종    725   21
+	22:             후두    524   22
+	23:           전립선     NA   23
+	24:             고환     NA   24
+	                암종 환자수 순위
+
+
+
+
+
+
+문제 108. 2009년도에 서울시에서 교통사고가 일어난 장소와 건수와 순위를 출력하시오 !(car_accident.csv를 이용)
+	car_accident <- read.csv("car_accident.csv", header = T)
+	head(car_accident)
+	car_accident2 <- car_accident[car_accident$loc == "서울" & car_accident$year2 == 2009, ]
+	car_accident2
+	x <- data.table(loc_desc=car_accident2$loc_desc, cnt=car_accident2$cnt, \
+			  rank=rank(-car_accident2$cnt, ties.method = "min"))
+	orderBy(~rank, x)
+
+	                                                         loc_desc cnt rank
+	   1:                                           박내과옆 먹자골목  66    1
+	   2:                                                        서울  60    2
+	   3:                                                역삼역교차로  56    3
+	   4:                                              교보생명사거리  54    4
+	   5:                                      남부순환도로 신림4거리  50    5
+	  ---                                                                     
+	3541:                                   GS칼텍스 앞 횡단보도 부근   2 2948
+	3542:                                          지디리얼에스테이트   2 2948
+	3543:                                 훼미리마트편의점앞 횡단보도   2 2948
+	3544:                                  강동가톨릭병원 앞 횡단보도   2 2948
+	3545: 한강시민공원 만남의 광장 자전거대여점 앞 한강시민공원 내 자   2 2948
+
+
+
+
+
+
+
+
+
+
+■ R shiny 사용 방법
+
+	https://shiny.rstudio.com/gallery/
+
+
+★ R shiny가 무엇인가? 
+
+	R의 강력한 그래픽 기능과 통계 분석 능력을 이용하고, 사용자 상호작용을 쉽게 만들 수 있는 언어
+
+	샤이니 패키지를 이용해서 편하게 사용자 인터페이스(User Interface)를 이용할 수 있다.
+
+
+★ R 샤이니 기본 골격
+
+	유저 인터페이스와 서버
+	   ↓		   ↓
+	frontier 	backend tier
+
+
+	1. 화면 개발
+		UI <- ......
+
+	2. 서버단 개발
+		server <- .......
+
+	3. 실행하는 명령어
+		shinyApp(ui=ui, server=server)
+
+
+
+
+
+샤이니 기본 예제 1.
+
+	install.packages("DT")
+        install.packages("ggplot2")
+        library(DT)
+        library(ggplot2)
+        
+        head(mpg)
+        str(mpg)
+        
+        #install.packages("DT")
+        
+        library(DT)
+        library(shiny)
+        library(ggplot2)
+        
+        # Define UI ----
+        ui <- fluidPage(
+            titlePanel("Basic DataTable"),
+            
+            # Create a new Row in the UI for selectInputs
+            fluidRow(
+                column(4,
+                       selectInput("man",
+                                   "Manufacturer:",
+                                   c("All",
+                                     unique(as.character(mpg$manufacturer))))
+                ),
+                column(4,
+                       selectInput("trans",
+                                   "Transmission:",
+                                   c("All",
+                                     unique(as.character(mpg$trans))))
+                ),
+                column(4,
+                       selectInput("cyl",
+                                   "Cylinders:",
+                                   c("All",
+                                     unique(as.character(mpg$cyl))))
+                )
+            ),
+            # Create a new row for the table.
+            DT::dataTableOutput("table")
+        )
+        )
+        # Define server logic ----
+        server <- function(input, output) {
+            # Filter data based on selections
+            output$table <- DT::renderDataTable(DT::datatable({
+                data <- mpg
+                if (input$man != "All") {
+                    data <- data[data$manufacturer == input$man,]
+                }
+                if (input$cyl != "All") {
+                    data <- data[data$cyl == input$cyl,]
+                }
+                if (input$trans != "All") {
+                    data <- data[data$trans == input$trans,]
+                }
+                data
+            }))
+        }
+        
+        # Run the app ----
+        shinyApp(ui = ui, server = server)
+
+
+
+
+
+
+
+
+샤이니 기본 예제 2.
+
+	#install.packages("DT")
+        
+        #library(DT)
+        library(shiny)
+        library(ggplot2)
+        
+        emp <- read.csv("d:\\emp.csv",header=T)
+        
+        # Define UI ----
+        ui <- fluidPage(
+            titlePanel("EMP 데이터 테이블"),
+            
+            
+            # Create a new Row in the UI for selectInputs
+            fluidRow(
+                column(4,
+                       selectInput("job",
+                                   "job:",
+                                   c("All",
+                                     unique(as.character(emp$job))))
+                ),
+                column(4,
+                       selectInput("deptno",
+                                   "deptno:",
+                                   c("All",
+                                     unique(as.character(emp$deptno))))
+                ),
+                column(4,
+                       selectInput("sal",
+                                   "sal:",
+                                   c("All",
+                                     unique(as.character(emp$sal))))
+                )
+            ),
+            # Create a new row for the table.
+            DT::dataTableOutput("table")
+        )
+        
+        
+        )
+        
+        # Define server logic ----
+        server <- function(input, output) {
+            # Filter data based on selections
+            output$table <- DT::renderDataTable(DT::datatable({
+                data <- emp
+                if (input$job != "All") {
+                    data <- data[data$job == input$job,]
+                }
+                if (input$deptno != "All") {
+                    data <- data[data$deptno == input$deptno,]
+                }
+                if (input$sal != "All") {
+                    data <- data[data$sal == input$sal,]
+                }
+                data
+            }))
+            
+            
+        }
+        
+        # Run the app ----
+        shinyApp(ui = ui, server = server)
+
+
+
+
+
+문제 109. 샤이니 기본 화면을 실행하시오 ! 
+
+	# Define UI ----
+        ui <- fluidPage(
+            
+        )
+        
+        # Define server logic ----
+        server <- function(input, output) {
+            
+        }
+        
+        # Run the app ----
+        shinyApp(ui = ui, server = server)
+
+
+
+
+문제110.  ui 에  아래의 내용을 추가하시오 ! 
+
+	# Define UI ----
+        ui <- fluidPage(
+            titlePanel("title panel"),
+            
+            sidebarLayout(
+                sidebarPanel("sidebar panel"),
+                mainPanel("main panel")
+            )
+        )
+        
+        # Define server logic ----
+        server <- function(input, output) {
+            
+        }
+        
+        # Run the app ----
+        shinyApp(ui = ui, server = server)
+
+
+
+
+
+문제111. sidebarLayout이 오른쪽에 나오게 하시오 ! 
+
+	# Define UI ----
+        ui <- fluidPage(
+            titlePanel("title panel"),
+            
+            sidebarLayout(position = "right",
+                          sidebarPanel("sidebar panel"),
+                          mainPanel("main panel")
+            )
+        )
+        
+        # Define server logic ----
+        server <- function(input, output) {
+            
+        }
+        
+        # Run the app ----
+        shinyApp(ui = ui, server = server)
+
+
+
+
+
+문제112. 사용자 인터페이스의 글씨를  아래와 같이 출력하시오 ! 
+
+	# Define UI ----
+        ui <- fluidPage(
+            titlePanel("My Shiny App"),
+            sidebarLayout(
+                sidebarPanel(),
+                mainPanel(
+                    h1("First level title"),
+                    h2("Second level title"),
+                    h3("Third level title"),
+                    h4("Fourth level title"),
+                    h5("Fifth level title"),
+                    h6("Sixth level title")
+                )
+            )
+        )
+        
+        # Define server logic ----
+        server <- function(input, output) {
+            
+        }
+        
+        # Run the app ----
+        shinyApp(ui = ui, server = server)
+
+
+
+
+
+문제113.  아래의 필요한 전체 기능을 출력하시오 !
+
+	# Define UI ----
+        ui <- fluidPage(
+            titlePanel("Basic widgets"),
+            
+            fluidRow(
+                
+                column(3,
+                       h3("Buttons"),
+                       actionButton("action", "Action"),
+                       br(),
+                       br(), 
+                       submitButton("Submit")),
+                
+                column(3,
+                       h3("Single checkbox"),
+                       checkboxInput("checkbox", "Choice A", value = TRUE)),
+                
+                column(3, 
+                       checkboxGroupInput("checkGroup", 
+                                          h3("Checkbox group"), 
+                                          choices = list("Choice 1" = 1, 
+                                                         "Choice 2" = 2, 
+                                                         "Choice 3" = 3),
+                                          selected = 1)),
+                
+                column(3, 
+                       dateInput("date", 
+                                 h3("Date input"), 
+                                 value = "2014-01-01"))   
+            ),
+            
+            fluidRow(
+                
+                column(3,
+                       dateRangeInput("dates", h3("Date range"))),
+                
+                column(3,
+                       fileInput("file", h3("File input"))),
+                
+                column(3, 
+                       h3("Help text"),
+                       helpText("Note: help text isn't a true widget,", 
+                                "but it provides an easy way to add text to",
+                                "accompany other widgets.")),
+                
+                column(3, 
+                       numericInput("num", 
+                                    h3("Numeric input"), 
+                                    value = 1))   
+            ),
+            
+            fluidRow(
+                
+                column(3,
+                       radioButtons("radio", h3("Radio buttons"),
+                                    choices = list("Choice 1" = 1, "Choice 2" = 2,
+                                                   "Choice 3" = 3),selected = 1)),
+                
+                column(3,
+                       selectInput("select", h3("Select box"), 
+                                   choices = list("Choice 1" = 1, "Choice 2" = 2,
+                                                  "Choice 3" = 3), selected = 1)),
+                
+                column(3, 
+                       sliderInput("slider1", h3("Sliders"),
+                                   min = 0, max = 100, value = 50),
+                       sliderInput("slider2", "",
+                                   min = 0, max = 100, value = c(25, 75))
+                ),
+                
+                column(3, 
+                       textInput("text", h3("Text input"), 
+                                 value = "Enter text..."))   
+            )
+            
+        )
+        
+        # Define server logic ----
+        server <- function(input, output) {
+            
+        }
+        
+        # Run the app ----
+        shinyApp(ui = ui, server = server)
+
+
+
+
+
+
+
+
+
+
+■ R에서 그래프 그리는 방법
+
+	1. 막대 그래프
+	2. 원형 그래프
+	3. 라인 그래프
+	4. 특수 그래프 (지도, 소리 시각화, 워드 클라우드)
+	5. 사분위수 그래프 ( 평균, 중앙값, 이상치 )
+
+
+
+
+
+★ 막대 그래프
+
+
+문제 114. emp테이블의 월급으로 기본적인 막대그래프를 그리시오 !
+
+	barplot(emp$sal)
+
+
+
+
+
+문제 115. 위의 그래프의 제목을 Salary Bar Chart라고 이름을 붙이시오 !
+
+	barplot(emp$sal, main = "Salary Bar Chart")
+
+
+
+
+
+문제 116. 막대 그래프의 x축에 사원이름을 붙이시오 !
+
+	barplot(emp$sal, main = "Salary Bar Chart", names.arg = emp$ename, ylab = "Salary")
+
+
+
+
+
+문제 117. 막대그래프의 색깔을 입히시오 !
+
+	barplot(emp$sal, main = "Salary Bar Chart", names.arg = emp$ename, \
+	        ylab = "Salary", col=('blue'))
+
+
+
+
+
+문제 118. 아래와 같이 치킨집 년도별 창업 건수를 막대 그래프로 시각화 하시오 !
+
+	x <- read.csv("창업건수.csv", header = T)
+	head(x)
+	barplot(x$치킨집, main = "치킨집 창업 건수", names.arg = x$X,
+	        ylab = "건수", col = ("green"))
+
+
+
+
+
+
+문제 119. 치킨집 년도별 창업건수, 폐업건수를 아래와 같이 같이 막대그래프로 시각화 하시오 !
+
+	x <- read.csv("창업건수.csv", header = T)
+	head(x)
+	y <- read.csv("폐업건수.csv", header = T)
+	head(y)
+	z <- rbind(x$치킨집, y$치킨집)
+	z
+	barplot(z, main = "년도별 치킨집 창업, 폐업 건수", names.arg = x$X,
+	        ylab = "건수", ylim = c(0, 3600), col = c("blue", "green"), beside=T, 
+	        legend=c("창업", "폐업"))
+
+
+
+
+
+문제 120. 카페(커피음료)가 얼마나 창업하고 얼마나 폐업하는지 막대그래프로 시각화 하시오 !
+
+	x <- read.csv("창업건수.csv", header = T)
+	head(x)
+	y <- read.csv("폐업건수.csv", header = T)
+	head(y)
+	z <- rbind(x$커피음료, y$커피음료)
+	z
+	barplot(z, main = "년도별 카페 창업, 폐업 건수", names.arg = x$X,
+	        ylab = "건수", ylim = c(0, 3600), col = c("blue", "green"), beside=T, 
+	        legend=c("창업", "폐업"))
+
+
+
+
+
+문제 121. R shiny로 막대그래프 시각화를 자동화 시키는 기본 코드를 돌려보시오 !
+
+
+	library(shiny)
+	library(datasets)
+	
+	setwd("c:/R")
+	x <- read.csv("창업건수.csv", header = T)
+	y <- read.csv("폐업건수.csv", header = T)
+	
+	# Define UI ----
+	ui <- fluidPage(    
+	    
+	    # Give the page a title
+	    titlePanel("년도별 업종별 창업 현황"),
+	    
+	    # Generate a row with a sidebar
+	    sidebarLayout(      
+	        
+	        # Define the sidebar with one input
+	        sidebarPanel(
+	            selectInput("region", "업종:", 
+	                        choices=colnames(x)[-1]),
+	            hr(),
+	            helpText("업종을 선택하세요!")
+	        ),
+	        
+	        # Create a spot for the barplot
+	        mainPanel(
+	            plotOutput("phonePlot")  
+	        )
+	        
+	    )
+	)
+	
+	# Define server logic ----
+	server <-function(input, output) {
+	    
+	    # Fill in the spot we created for a plot
+	    output$phonePlot <- renderPlot({
+	        
+	        # Render a barplot
+	        barplot(x[, input$region], main = "창업 건수", names.arg = x$X, 
+	                ylab = "건수", ylim = c(0, max(x[, input$region])+100), col = ("green"))
+	    })
+	}
+	
+	# Run the app ----
+	shinyApp(ui = ui, server = server)
+
+
+
+
+
+
+
+
+
+문제 123. 샤이니로 아래와 같이 창업과 폐업을 같이 출력되게 하는 자동화 화면을 구현하시오 !
+
+	library(shiny)
+        library(datasets)
+        
+        setwd("c:/R")
+        x <- read.csv("창업건수.csv", header = T)
+        y <- read.csv("폐업건수.csv", header = T)
+        
+        # Define UI ----
+        ui <- fluidPage(    
+            
+            # Give the page a title
+            titlePanel("년도별 업종별 창업 현황"),
+            
+            # Generate a row with a sidebar
+            sidebarLayout(      
+                
+                # Define the sidebar with one input
+                sidebarPanel(
+                    selectInput("region", "업종:", 
+                                choices=colnames(x)[-1]),
+                    hr(),
+                    helpText("업종을 선택하세요!")
+                ),
+                
+                # Create a spot for the barplot
+                mainPanel(
+                    plotOutput("phonePlot")  
+                )
+                
+            )
+        )
+        
+        # Define server logic ----
+        server <-function(input, output) {
+            # Fill in the spot we created for a plot
+            output$phonePlot <- renderPlot({
+                
+                # Render a barplot
+                barplot(rbind(x[, input$region], y[, input$region]), 
+                        main = "년도별 카페 창업, 폐업 건수", 
+                        names.arg = x$X,
+                        ylab = "건수", 
+                        ylim = c(0, max(x[, input$region], y[, input$region])+100), 
+                        col = c("blue", "green"), 
+                        beside=T, 
+                        legend=c("창업", "폐업"))
+            })
+        }
+        
+        # Run the app ----
+        shinyApp(ui = ui, server = server)

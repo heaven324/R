@@ -1,0 +1,309 @@
+﻿R_수업_NCS노트정리_최재혁.pdf  제출  혜진이에게 제출
+
+ 3월 18일까지 제출
+
+
+
+
+
+그림 19
+
+	※ 결과 설명 
+		1. 독일 채무 불이행 데이터의 라벨 클래스에 대한 설명
+		   1000개씩 샘플링을 한다.
+
+		2. 25개의 부트스트랩 샘플이 사용되었다.
+		   1000개씩 25번 샘플링해서 훈련시켰다.
+
+		3. 총 12개의 모델이 C5.0튜닝 파라미터 model, trial, window의 조합으로 테스트 되었다는 것을
+		   확인할 수 있다.
+		   각 후보 모델의 정확도와 카파 통계량을 나타낸다
+		   m <- train(default ~. , data =credit_train  , method="C5.0")
+
+		4. 각주에 설명된 것처럼 가장 큰 정확도를 갖는 모델이 trials=20, model=tree, winnow=FALSE인 
+		   모델이다 라는 것을 알려주고 있다.
+
+		위에서 생성한 모델 m으로 예측을 하고 실제 라벨과 비교를 한다.
+		p <- predict(m, credit_test[ , -17])
+		table( p, credit_test[,17])
+		p     no yes
+		  no  68  11
+		  yes  7  14
+
+
+
+
+
+
+
+
+
+■ 튜닝 절차 커스터 마이징 하기 (p 475)
+
+    * 이전 방법
+    m <- train(default ~. , data =credit_train  , method="C5.0")
+
+    * 이후 방법 (튜닝 절차 커스터마이징 한 후) p479
+    ctrl <- trainControl(method="cv", number=10, selectionFunction="oneSE")
+    	※ 설명 : cv    ─▶ p476 k-폴드 교차검증
+    	          oneSE ─▶ p477 selectionFunction 파라미터는 다양한 후보중에서 최적의 모델을 선택하는
+    	                     함수를 지정하는데 사용한다.
+    	                     그런 함수는 3가지가 있는데 best, oneSE, tolerance이다.
+    	                     best는 단순히 명시된 성능척도에 대해 최고값을 갖는 후보를 선택하는 것이고
+    	                     이 값이 default이다.
+    	                     oneSE는 최고 성능의 1표준오차 내의 가장 단순한 후보를 선택한다.
+
+    grid <- expand.grid(.model="tree", .trials=c(1, 5, 10, 20, 25, 30, 35), .winnow="FALSE")
+
+    m <- train(default ~. , data =credit_train  , method="C5.0", metric="Kappa", trcControl=ctrl,
+    	       tuneGrid=grid)
+
+
+
+
+문제 267. 독일 채무 불이행자에 대한 모델을 생성하는데 아래와 같이 caret패키지의 train함수의 옵션을 
+		  주어서 모델을 생성하고 사용자 지정 안했을 대 보다 정확도가 더 높아지는지 확인하시오 !
+
+	library(caret)
+	credit <- read.csv("credit.csv")
+
+	ctrl <- trainControl(method="cv", number=10, selectionFunction="oneSE")
+	grid <- expand.grid(.model="tree", .trials=c(1, 5, 10, 20, 25, 30, 35), .winnow="FALSE")
+	m <- train(default ~. , data =credit_train  , method="C5.0", metric="Kappa", trcControl=ctrl,
+		       tuneGrid=grid)
+	m
+
+	C5.0 
+
+	1000 samples
+	  16 predictor
+	   2 classes: 'no', 'yes' 
+
+	No pre-processing
+	Resampling: Bootstrapped (25 reps) 
+	Summary of sample sizes: 1000, 1000, 1000, 1000, 1000, 1000, ... 
+	Resampling results across tuning parameters:
+
+	  trials  Accuracy   Kappa    
+	   1      0.6947856  0.2638759
+	   5      0.7139042  0.2947655
+	  10      0.7289651  0.3134021
+	  15      0.7339478  0.3345875
+	  20      0.7370405  0.3338858
+	  25      0.7369206  0.3360275
+	  30      0.7386061  0.3379393
+	  35      0.7401694  0.3422338
+
+	Tuning parameter 'model' was held constant at a value of
+	 tree
+	Tuning parameter 'winnow' was held constant at a value
+	 of FALSE
+	Kappa was used to select the optimal model using the
+	 largest value.
+	The final values used for the model were trials = 35, model
+	 = tree and winnow = FALSE.
+
+
+	p <- predict(m, credit)
+	table( p, credit$default)
+
+	p      no yes
+	  no  700   0
+	  yes   0 300
+
+
+
+
+
+
+
+
+■ 앙상블의 이해 (p 481)
+
+	앙상블.pdf 참고
+
+
+
+
+
+
+★ 독일 채무 불이행자를 예측하는 모델을 bagging기법으로 실습 
+
+	# bagging test
+	install.packages("ipred")
+	library(ipred)
+	credit <- read.csv("credit.csv")
+	set.seed(300)
+	mybag <- bagging(default~., data=credit, nbagg=25)
+	"""
+	nbagg 파라미터는 앙상블에서 투표할 수 있는 의사결정 트리의 수를 제어하는데 사용한다.
+	(디폴트값이 25이다.)
+	이 숫자를 증가시키면 모델의 성능을 한계점까지 향상시킬 수 있다.
+	단점은 트리가 많은 경우 어느정도 시간이 걸린다.
+	"""
+	credit_pred <- predict(mybag, credit)
+	table(credit_pred, credit$default)
+
+	credit_pred  no yes
+	        no  699   2
+	        yes   1 298
+
+
+
+
+문제 268. caret 패키지의 train() 함수를 이용해서 10-폴드 교차검증과 같이 배깅트리를 사용할 수 있다.
+		  책 486 페이지에 나온대로 독일 은행 채무 불이행자를 예측하는 모델을 생성하고 정확도를 확인
+		  하시오 !
+
+
+	library(caret)
+	set.seed(300)
+	ctrl <- trainControl(method="cv", number=10)
+	m = train(default~., data=credit, method="treebag", trControl=ctrl)
+	credit_pred <- predict(m, credit)
+	table(credit_pred, credit$default)
+
+	credit_pred  no yes
+	        no  700   1
+	        yes   0 299
+
+
+
+
+
+
+■ 랜덤 포레스트 (p 493)
+	random forest는 decision tree와 bagging을 결합한 알고리즘을 말한다.
+
+	다른 앙상블 기반의 방법들과 비교해서 랜덤포레스트는 매우 경쟁력이 있고 사용하기 쉽고 쉽게
+	과적합되지 않는다.
+
+	장점 : 1. 모든 문제에 대해 잘 수행되는 다목적 모델이다.
+		   2. 범주형 또는 연속특징 뿐만아니라 잡음이 있는 데이터나 누락데이터(결측치)를 다룰 수 있다.
+
+	단점 : 모델 해석이 쉬운 의사결정트리 와는 다르게 않게 모델 해석이 쉽지 않다.
+
+
+	예제 : 독일 채무 불이행자를 예측하는 랜덤포레스트 모델 생성
+
+		credit <- read.csv("credit.csv")
+		set.seed(300)
+		# install.packages("randomForest")
+		library(randomForest)
+		rf <- randomForest(default~., data = credit)
+		rf
+
+		Call:
+		 randomForest(formula = default ~ ., data = credit) 
+		               Type of random forest: classification
+		                     Number of trees: 500
+		No. of variables tried at each split: 4
+
+		        OOB estimate of  error rate: 23.3%
+		Confusion matrix:
+		     no yes class.error
+		no  638  62  0.08857143
+		yes 171 129  0.57000000
+
+		credit_pred <- predict(rf, credit)
+		table(credit_pred, credit$default)
+
+		credit_pred  no yes
+		        no  700   0
+		        yes   0 300
+
+
+
+
+
+문제 269. 소아 척추 수술에 대한 데이터를 이용해서 척추병의 완치를 예측하는 모델을 생성하시오 !
+"""
+kyphosis 데이터는 성형외과에서 아이들이 척추수슬후에 얼마만에 증상이 사라졌는지 아니면 그대로 
+존재하는지에 대한 데이터로서 독립변수가 처음 수술한 척추의 수와 관련된 척추의 수 그리고 경과 개월이다.
+데이터가 81개 밖에 안되니 그냥 결정트리에 넣어서 예측과 실제 라벨을 비교해서 정확도를 보자
+age : 개월수, number : 척추수, start : 경과 개월, kyposis : 후유증 유무
+"""
+	1. 데이터를 로드한다.
+		kyphosis <- read.csv("kyphosis.csv")
+		View(kyphosis)
+
+	2. rpart 를 이용해서 결정트리 모델을 생성한다.
+		library(rpart)
+		fit <- rpart(kyphosis ~ age + number + start,method="class", 
+		                    data=kyphosis)
+
+	3. 모델을 시각화 한다.
+		install.packages("rpart")
+		install.packages("rattle")
+		library(rattle)
+		library(rpart.plot)
+		fancyRpartPlot(fit)
+
+	4. 정확도를 확인한다.
+		result <- predict(fit , newdata = kyphosis)
+		sum(kyphosis$kyphosis == ifelse(result[,1]>0.5 , 
+		               "absent" , "present"))/NROW(kyphosis) 
+		[1] 0.8395062
+
+
+
+
+문제 270. 랜덤 포레스트를 이용해서 위의 정확도를 올리는 모델을 생성하시오 !
+
+	library(randomForest)
+	fit <- randomForest(kyphosis ~ age + number + start,   
+	                       data=kyphosis)
+	res2 <- predict(fit , newdata = kyphosis)
+	sum(res2 == kyphosis$kyphosis)/NROW(kyphosis)
+
+	[1] 0.9753086
+
+
+
+
+
+
+
+■ 부스팅(Boosting) (p 486)
+
+	앙상블.pdf 참고
+
+
+	● 독일은행의 채무 불이행자를 예측하는 모델을 boosting으로 구현
+		 credit <- read.csv("credit.csv")
+		 install.packages("adabag")
+		 library(adabag)
+		 set.seed(300)
+		 model_ada <- boosting(default ~ ., data=credit)
+		 predict_ada <- predict(model_ada, credit)
+
+		 # 예측 결과 확인 
+		 predict_ada$confusion
+
+		               Observed Class
+		Predicted Class  no yes
+		            no  700   0
+		            yes   0 300
+
+		처음보는 데이터에 대한 좀 더 정확한 성능평가를 하려면 다른 평가방법을 할 필요가 있다.
+
+		set.seed(300)
+		adaboost_cv <- boosting.cv(default~., data = credit)
+
+		i:  1 Tue Mar 12 15:52:18 2019 
+		i:  2 Tue Mar 12 15:52:47 2019 
+		i:  3 Tue Mar 12 15:53:15 2019 
+		i:  4 Tue Mar 12 15:53:43 2019 
+		i:  5 Tue Mar 12 15:54:11 2019 
+		i:  6 Tue Mar 12 15:54:39 2019 
+		i:  7 Tue Mar 12 15:55:07 2019 
+		i:  8 Tue Mar 12 15:55:34 2019 
+		i:  9 Tue Mar 12 15:56:02 2019 
+		i:  10 Tue Mar 12 15:56:30 2019 
+
+		adaboost_cv$confusion
+
+		               Observed Class
+		Predicted Class  no yes
+		            no  594 151
+		            yes 106 149

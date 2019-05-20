@@ -1,0 +1,429 @@
+﻿	y = αx + β
+	
+	#수동으로 a(기울기)를 추정
+	
+	a <- cov(launch$temprature, launch$distress_ct) / var(launch$temprature)
+	
+	#수동으로 b(절편)을 추정
+	
+	y = ax + b
+	    ↓
+	b = y - ax
+	
+	b <- mean( launch$distress_ct) - a*mean(launch$temprature)
+	b = 3.698414
+	
+		y = -0.04754 x + 3.698414  <--- 회귀직선 식
+
+
+
+
+문제 215. 위의 손으로 구한 기울기와 절편을 R에서 제공하는 회귀함수인 lm을 이용해서 구해보시오 !
+
+	launch <- read.csv("challenger.csv")
+	
+	attach(launch)
+	
+	lm(distress_ct ~ temperature, launch)
+	       ↑	      ↑
+	       y축            x축
+
+
+
+문제 216. 책 251 페이지에 나오는 plot그래프를 그리시오
+
+	x축 : 온도
+	y축 : o형링 파손수
+	
+	공식 : plot( y축 ~ x축 , data = 데이터셋 이름 )
+	
+	답 : plot( distress_ct ~ temperature, data=launch, col='blue')
+
+
+
+문제 217. 위의 plot그래프의 data에 맞는 회귀직선을 그리시오
+
+	m <- lm( distress_ct ~ temperature, launch)
+	
+	abline(m, col="red") 
+
+
+
+
+문제 218. 위의 그래프에 제목에 회귀직선의 방정식이 출력되게 하시오!
+
+	힌트 : a = c(1, 5, 9, 2, 6, 10, 3, 7, 11, 4, 8, 12)
+
+	y <- a+-0.04754 + 3.69841
+	y
+
+	plot( distress_ct ~ temperature, data=launch, col='blue')
+	m <- lm( distress_ct ~ temperature, launch)
+	abline(m, col="red")
+	title(paste('파손수=', m$coefficients[1], "* tannin + ", m$coefficients[2]))
+
+
+
+
+문제 219. 애벌레의 성장 추이와 탄닌과의 관계가 어떻게 되는지 탄닌 포함량이 많을 수록 애벌레의 성장이 
+	  증가하는지 감소하는지를 나타내는 회귀방정식을 구하고 시각화 하시오 ! (데이터 : regression.txt)
+
+	reg <- read.table("regression.txt", header = T)
+	plot( growth ~ tannin, data=reg, col='blue')
+	m <- lm(growth ~ tannin, reg)
+	abline(m, col="red")
+	title(paste('growth=', round(m$coefficients[1], 4), "* tannin + ", 
+	      round(m$coefficients[2], 4)))
+
+
+
+
+
+문제 220. 위의 그래프에 잔차를 그리시오 !
+
+	reg <- read.table("regression.txt", header = T)
+	attach(reg)
+	plot( growth ~ tannin, data=reg, col='blue')
+	m <- lm(growth ~ tannin, reg)
+	abline(m, col="red")
+	title(paste('growth=', round(m$coefficients[1], 4), "* tannin + ", round(m$coefficients[2], 4)))
+	join <- function(i){
+	    lines(c(tannin[i], tannin[i]), c(growth[i], m$coefficients[2]*tannin[i]+m$coefficients[1]),
+		  col = "green")}
+	sapply(1:9, join)
+
+
+
+
+
+
+
+
+
+
+
+
+★ 상관관계 (p256)
+
+	상관분석은 두 변수가 서로 어떠한 괸계인지를 파악하는 분석
+	기울기에 따라 양의 상관관계, 음의 상관관계로 나눌 수 있다.
+
+	점들이 흩어져 있는 모습을 보고 두 변수의 관계를 파악하는데 밀도의 차이에 따라서 상관계수를 
+	나타낸다.
+
+	상관계수의 기호는 "r"을 사용한다.
+
+	상관계수의 수치가 0에 가까울 수록 상관관계가 약하다는 뜻이고 +1에 가까우면 양의 상관관계가 강하다.
+	-1에 가까우면 음의 상관관계가 강하다.
+
+	예 : 온도와 0형링 파손수 두 변수간의 상관관계가 강한지 약한지 알아내시오 !
+
+		attach(launch)
+		cor(temperature, distress_ct)
+
+		[1] -0.5111264
+
+
+
+	install.packages('corrplot')
+	library(corrplot)
+	
+	z <- c(1,5,10,15)
+	x <- c(3,9,21,29)
+	y <- c(1,11,19,31)
+	d <- data.frame(z,x,y)
+	d
+	# 일반 상관계수
+	cor(d)
+	
+	part1 <- lm(y~x, data=d)
+	summary(part1)
+	cov(x,y) / ( sqrt(var(x))*sqrt(var(y)) )
+	cor(d$x, d$y)
+
+
+
+
+
+
+문제 221. 코스피 지수 수익율과 삼성전자와 현대자동차 수익율을 가지고 plot그래프를 그리시오 !
+
+	k_index <- read.csv("K_index.csv", header = T)
+	h_stock <- read.csv("h_stock.csv", header = T) 
+	s_stock <- read.csv("s_stock.csv", header = T)
+	head(k_index)
+	head(h_stock)
+	head(s_stock)
+	all_data <- merge(merge(k_index,s_stock), h_stock)
+	head(all_data)
+	attach(all_data)
+	plot(k_rate, s_rate, col = "blue")
+	plot(k_rate, h_rate, col = "red")
+
+
+
+
+문제 222. 코스피 등락 비율과 삼성 수익율 등락 비율을 plot그래프로 그리고 그 그래프에 회귀직선을 그으시오 !
+
+	plot(k_rate, s_rate, col = "blue")
+	models <-lm(s_rate~k_rate, all_data)
+	abline(models, col = "red")
+
+
+
+
+
+문제 223. 현대자동차도 마찬가지로 회귀그래프를 만드시오 !
+
+	plot(k_rate, h_rate, col = "blue")
+	models <-lm(h_rate~k_rate, all_data)
+	abline(models, col = "red")
+
+
+
+
+문제 224. 현대자동차와 삼성전자 그래프를 하나의 화면으로 출력되게 하시오 !
+
+	graphics.off()
+	par(mfrow = c(1,2), new = T)
+	par(mar = c(2,2,2,2))
+	plot(k_rate, s_rate, col = "blue")
+	models <-lm(s_rate~k_rate, all_data)
+	abline(models, col = "red")
+	title("삼성")
+	plot(k_rate, h_rate, col = "blue")
+	modelh <-lm(h_rate~k_rate, all_data)
+	abline(modelh, col = "red")
+	title("현대")
+
+		회귀 모수중 기울기가 1보다 크면 공격적 주식이고 1보다 작으면 방어적 주식이다.
+
+
+
+
+문제 225. 아래의 두개의 그래프에 회귀 기울기가 각각 제목으로 출력되게 하시오 !
+
+	graphics.off()
+	par(mfrow = c(1,2), new = T)
+	par(mar = c(2,2,2,2))
+	plot(k_rate, s_rate, col = "blue")
+	models <-lm(s_rate~k_rate, all_data)
+	abline(models, col = "red")
+	title(paste("y = ",round(models$coefficients[2], 3), "x +", round(models$coefficients[1],3)))
+	plot(k_rate, h_rate, col = "blue")
+	modelh <-lm(h_rate~k_rate, all_data)
+	abline(modelh, col = "red")
+	title(paste("y = ",round(modelh$coefficients[2], 4), "x +", round(modelh$coefficients[1],4)))
+
+
+
+
+문제 226. 삼성전자와 현대전자의 삼성 수익율 등락비울이 각각 코스피 등락율과 상관관계가 어떻게 되는지 
+	  출력하시오 즉 둘중에 코스피 등락율과 더 상관관계가 높은 주식이 어떤건지 알아내시오 !
+
+	attach(all_data)
+	cor(na.omit(k_rate), na.omit(s_rate))   # [1] 0.5142455
+	cor(na.omit(k_rate), na.omit(h_rate))   # [1] 0.3262777
+
+		주식 시장에서의 상관계수는 시장과 해당 종목이 얼마나 비슷하게 움직이고 있느냐를 찾는
+		것이다. 
+		현업에서는 0.65 ~ 0.70 위부터 가치가 있다고 판단하고 투자분석을 한다.
+
+
+
+
+
+
+
+
+
+■ 다중 선형 회귀 분석 (p 258)
+
+	단순 선형 회귀 분석의 목적이 하나의 독립변수만을 가지고 종속변수를 예측하기 위한 회귀모형을 
+	만들기 위한 것이었다면 다중회귀분석의 목적은 여러개의 독립변수들을 가지고 종속변수를 예측하기
+	위한 회귀모형을 만드는 것이다.
+
+	예를들면 집값에 영향을 미치는 요소가 단순히 평수만 있는게 아니다.
+
+	집값 ◀──	평수, 교통, 신도시, 범죄율, 층수, 방갯수 ...
+	 ↑		 ↑
+      종속변수 	     독립변수들
+
+	집값 = β(절편) + α1*x1 + α2*x2 + α3*x3 + α4*x4 ..... + ε
+	
+	독립변수들이 여러개 이므로 단순 회귀와는 다르게 행렬을 이용해서 회귀모수를 구해야 한다.
+
+
+
+
+
+★ 다중 회귀식의 베타값을 구하는 함수 생성하는 방법
+
+
+
+
+문제 227. 아래의 행렬을 R로 만드시오 !
+
+	a <- matrix(c(1:9), nrow=3, ncol=3, byrow = T)
+	a
+
+
+
+
+문제 228. 아래의 행렬을 만드시오 !
+
+	b <- matrix(c(1:9), nrow=3, ncol=3, byrow = F)
+	b
+
+
+
+
+문제 229. a 행렬과 b 행렬의 곱을 출력하시오 !
+
+	a%*%b
+
+
+
+
+문제 230. a 행렬의 전치행렬을 구하시오 !
+
+	a
+	t(a)
+
+
+
+
+문제 231. 아래의 c행렬을 만들고 c행렬의 역행렬을 구하시오 !
+
+	c <- matrix(c(1:4), nrow = 2, ncol = 2, byrow = T)
+	solve(c)
+
+
+
+
+문제 232. 위의 회귀모수인 α와 β를 구하는 함수를 생성하시오 ! (책 260페이지의 reg라는 함수)
+
+	reg <- function(y, x) {
+	    x <- as.matrix(x)
+	    x<- cbind(intercept = 1, x)
+	    b <- solve(t(x)%*%x)%*%t(x)%*%y
+	    colnames(b) <- "estimate"
+	    return(b)
+	}
+	reg(y = launch$distress_ct, x=launch$temperature)
+
+
+
+
+
+
+
+
+
+
+★ 다중 선형 회귀를 이용한 의료비 예측 실습
+	
+	" 보험회사에서 보험료를 산정하기위해 미국 국민의 의료비가 얼마나 드는지를 예측하는 회귀모델을
+	  생성하는게 목표 "
+
+	독립변수들					종속변수
+
+	나이
+	성별
+	bmi				──────▶ 의료비 예측
+	부양가족수
+	흡연유무
+	미국의 어느지역에 사는지
+
+
+	1. 미국 국민의 의료비 데이터를 로드한다.
+		insurance <- read.csv("insurance.csv", header = T)
+		head(insurance)
+		  age    sex  bmi children smoker    region expenses
+		1  19 female 27.9        0    yes southwest 16884.92
+		2  18   male 33.8        1     no southeast  1725.55
+		3  28   male 33.0        3     no southeast  4449.46
+		4  33   male 22.7        0     no northwest 21984.47
+		5  32   male 28.9        0     no northwest  3866.86
+		6  31 female 25.7        0     no southeast  3756.62
+
+		종속변수 : expenses(의료비)
+		독립변수 : age, sex, bmi, children, smoker. region
+
+
+	2. 의료비의 분포가 어떻게 되는지 확인한다.
+		summary(insurance$expenses)
+		   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+		   1122    4740    9382   13270   16640   63770 	
+
+
+	3. 의료비의 분포를 확인하기 위해 히스토그램 그래프를 그린다.
+		hist(insurance$expenses)
+
+	4. 독립변수와 종속변수간의 상관관계 분석
+	   그리고 독립변수들간의 상관관계를 분석
+		cor(insurance[c("age", "bmi", "children", "expenses")])
+
+		               age        bmi   children   expenses
+		age      1.0000000 0.10934101 0.04246900 0.29900819
+		bmi      0.1093410 1.00000000 0.01264471 0.19857626
+		children 0.0424690 0.01264471 1.00000000 0.06799823
+		expenses 0.2990082 0.19857626 0.06799823 1.00000000
+
+
+	5. pairs함수를 이용해서 독립변수들간의 상관관계를 확인하시오 !
+		install.packages("psych")
+		library(psych)
+		pairs.panels(insurance[c("age", "bmi", "children", "expenses")])
+
+
+	※ 다중 공선성
+		회귀 분석에서 사용된 모형의 일부 설명변수(독립변수)가 다른 독립변수와의 상관정도가
+		높아 데이터 분석시 부정적인 영향을 미치는 현상을 말한다.
+
+		두 독립변수들 끼리 서로에게 영향을 주고 있다면 둘 중 하나의 영향력을 검증할 때 다른
+		하나의 영향력을 완전히 통제할 수 없게 된다.
+
+		예를 들면, 음주가 학업 성취도에 미치는 영향을 알아보기 위해서 회귀분석을 한다고 
+		가정해보면 학업 성취도를 종속변수로 y로 보고 이를 설명해주는 독립변수 x는 일평균
+		음주량, 또 다른 독립변수 x2는 혈중 알코올 농도라고 한다면
+		일평균 음주량과 혈중 알코올 농도는 서로 아주 강한 상관정도를 보인다.
+		이 상태에서 회귀분석을 하면 분명히 x1와 x2 둘중에 하나는 유의한 변수로 드러나게 된다.
+		실제로 x1과 x2의 값이 증가 또는 감소 할수록 y값이 증가 또는 감소할것인데 이중 하나는
+		굉장히 불안정한 계수값을 보이게 된다.
+
+
+	    예제 : car 데이터로 회귀 분석 전에 다중 공선성을 보이는 변수를 찾아내시오 !
+		# https://lovetoken.github.io/r/2017/04/16/vif.html 참고
+		
+		install.packages("car")
+		library(car)
+		
+		data(Boston, package = "MASS")
+		summary(Boston)
+		str(Boston)
+		data <- subset(Boston, select = -c(chas, rad)) 
+		# integer type 인 chas, rad 변수 독립변수에서 제외
+		
+		lmfit <- lm(medv ~ . , data = data)
+		summary(lmfit)
+		vif(lmfit)
+		vif(lmfit) > 10
+
+		   crim      zn   indus     nox      rm     age     dis     tax 
+		  FALSE   FALSE   FALSE   FALSE   FALSE   FALSE   FALSE   FALSE 
+		ptratio   black   lstat 
+		  FALSE   FALSE   FALSE 
+	
+			설명 : 이 데이터에서는 다중 공선성을 보이는 변수는 없는 것으로 확인이 되었다.
+
+		x1과 x2 두개가 서로 강한 상관정도가 있어서 둘다 종속변수에 대한 영향력이 높다면 예를들어
+		x2가 설명할 부분을 x1이 가져가 버리기 때문에 x2의 설명력은 분명 작아지게 된다.
+		그럼 쓸모없어진 x2의 p_value가 커서 유의수준을 넘어버리게 된다.
+
+		회귀분석 알고리즘 두번째.pdf 참고
+
+		vif(lmfit) > 10
+
+		분산팽창계수는 보통 10보다 큰것으로 골라내고 엄격하게 하려면 5보다 큰것으로 골라낸다
+		느슨하게 하려면 15또는 20으로 주고 골라낸다.

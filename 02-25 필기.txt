@@ -1,0 +1,350 @@
+﻿■  현업에서 데이터 분석할때 필요한 사항
+
+	1. 오라클 데이터베이스에 있는 데이터를 csv 로 내리지 않고 바로 오라클과 R 을 연동한다든지 
+	   오라클과 파이썬을 연동해서 바로 분석할 수 있게 하는게 중요하다.
+
+  	2. 현업 담당자들이 바로 분석할 수 있도록 UI 를 만들어 UI 를 배포 ( 샤이니 기술 요구 )
+
+
+
+
+
+
+문제191. knn 알고리즘을 R 샤이니에 구현하시오 !
+
+문제192.  위에 샤이니 코드에는 k 값을 21을 직접 셋팅했지만 다른 데이터를 넣으면 21이 아니라 달라져야 
+	  하므로 k 값이 책에 나온데로 입력 데이터 전체 건수의 제곱근이 들어가겠금 코드를 수정하시오 !  
+	  (책 121페이지)
+
+
+1. 지난시간까지 완성했던 샤이니 코드 : 그래프 + 테이블 포멧
+
+
+샤이니 그래프와 테이블까지 완성한 코드_20190225.txt
+
+2. 머신러닝 텝을 샤이니에 붙이기 위한 기본 골격 코드 
+
+0. knn 패키지 추가
+
+#Knn
+package_in("class")
+
+1. 사이드 메뉴에 아래의 내용 추가 
+
+sidebar <-    dashboardSidebar(
+
+
+    menuItem("머신러닝",
+             menuSubItem('Knn',tabName = 'knn')
+
+                                                )
+
+
+2. 바디에 아래의 내용 추가 
+
+
+body <- dashboardBody(
+  
+    tabItem(tabName = "knn",
+            sidebarPanel(
+              uiOutput("dependents_delcol_knn"),    컬럼 삭제하는 화면
+              uiOutput("dependents_selcol_knn"),    라벨 컬럼 선택하는 화면
+              uiOutput("dependents_button_knn")     knn 알고리즘 수행하는
+              #uiOutput("check_view_plot_knn"),    버튼 화면 
+              
+            ),                                 컬럼삭제하면 나머지 컬럼들 표시
+            mainPanel(verbatimTextOutput("submit_input_sample_knn")),
+            mainPanel(verbatimTextOutput("TestTableRender_knn"),
+                      style = "color:red;  font-size:12px;  font-style:italic;
+                      overflow-y:scroll;  max-height: 400px;  background: ghostwhite;")
+            )
+                                이원 교차표 표시  
+    )
+
+3. 서버에 아래의 내용 추가 
+
+
+server <- function(input, output,session) {
+
+
+  ## knn UI input 
+
+  output$dependents_delcol_knn <- renderUI({
+    data <- dataload()
+    if (is.null(data)) return(NULL)
+    checkboxGroupInput(inputId  = 'in_che_delcol_knn',
+                       label    = "delete colmun:",       필요없는 컬럼을
+                       choices  = colnames(data),         삭제하는 코드 
+                       selected = 'null',
+                       inline   = FALSE
+    )
+  })
+  output$dependents_button_knn <- renderUI({
+    data <- dataload()                                  knn 모델을 돌리겠금
+    if (is.null(data)) return(NULL)                  action 버튼을 누르는 코드 
+    actionButton("in_btn_submit_knn","Submit") 
+  })
+  output$dependents_selcol_knn <- renderUI({
+    data <- dataload()                                   라벨이 어떤 컬럼인지
+    if (is.null(data)) return(NULL)                      선택하는 코드
+    selectInput("in_sel_label_knn","Submit",choices = colnames(data))
+  })
+
+
+
+#4. 서버에 UI output 에 아래의 내용추가 
+
+
+  normalize <- function(x) {
+    return (( x - min(x)) / (max(x) -min(x))) 
+  }	
+  
+  
+  ###############knn show, reactive
+  subinput_table_knn <- eventReactive(input$in_btn_submit_knn, {
+    req(input$file1)
+    file1 = input$file1
+    data = read.csv(file1$datapath,stringsAsFactors =FALSE)
+    
+    data1<-as.data.frame(lapply(data[,-which(colnames(data)==input$in_sel_label_knn)], normalize))
+    
+    train_index = as.integer(trunc(nrow(data1) *0.8))
+
+    train <- data1[1:as.integer(train_index), ]
+    
+    test <- data1[as.integer(train_index+1):as.integer(nrow(data1)), ]
+    
+    train_label <-data[1:as.integer(train_index),which(colnames(data)==input$in_sel_label_knn)] 
+
+    test_label <- data[as.integer(train_index+1):as.integer(nrow(data1)),which(colnames(data)==input$in_sel_label_knn) ]
+    
+    train_label <- factor(train_label )
+    
+    #test_label <- factor(test_label)
+   
+    k_val = ceiling(sqrt(length(train)))
+
+    result <-  knn(train=train , test=test , cl=train_label, k= k_val )
+  
+    cross_table <- CrossTable(test_label , result, prop.chisq=FALSE )
+    
+    return(cross_table)
+    
+  })
+  output$TestTableRender_knn <- renderPrint({
+    subinput_table_knn()
+  })
+  output$submit_input_sample_knn <- renderPrint({
+    req(input$file1)
+    file1 = input$file1
+    data <- read.csv(file1$datapath)
+    data1 <- data[,!(colnames(data) %in% input$in_che_delcol_knn )]
+    return(head(data1,5))
+  })
+  
+  
+}
+
+######################### 4. 샤이니 실행 ###############################
+
+shinyApp(ui = ui, server = server)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+문제 193. 우리가 지금 만든 knn 샤이니 화면에
+	  붓꽃 데이터로 knn 분류를 잘하는지 확인하시오 !
+
+생각해야할 문제 : k 값 출력하기
+
+                | result 
+     test_label |     Iris-setosa | Iris-versicolor |  Iris-virginica |       Row Total | 
+----------------|-----------------|-----------------|-----------------|-----------------|
+    Iris-setosa |               8 |               0 |               0 |               8 | 
+                |           1.000 |           0.000 |           0.000 |           0.267 | 
+                |           1.000 |           0.000 |           0.000 |                 | 
+                |           0.267 |           0.000 |           0.000 |                 | 
+----------------|-----------------|-----------------|-----------------|-----------------|
+Iris-versicolor |               0 |              11 |               1 |              12 | 
+                |           0.000 |           0.917 |           0.083 |           0.400 | 
+                |           0.000 |           1.000 |           0.091 |                 | 
+                |           0.000 |           0.367 |           0.033 |                 | 
+----------------|-----------------|-----------------|-----------------|-----------------|
+ Iris-virginica |               0 |               0 |              10 |              10 | 
+                |           0.000 |           0.000 |           1.000 |           0.333 | 
+                |           0.000 |           0.000 |           0.909 |                 | 
+                |           0.000 |           0.000 |           0.333 |                 | 
+----------------|-----------------|-----------------|-----------------|-----------------|
+
+
+
+
+
+
+
+
+
+
+
+■ data shuffle 시키고 내리기 
+
+setwd("d://data")
+
+set.seed(11)
+
+iris <- read.csv("iris.csv", header=T)
+
+iris_shuffle <- iris[sample(nrow(iris)), ]
+
+write.csv(iris_shuffle,file="iris_shuffle.csv", row.names = FALSE)
+
+
+
+
+
+
+
+
+
+
+
+■ train 과 test 로 나누기 
+
+
+train_num<-round(0.7*nrow(skin_shuffle),0)
+
+skin_train <- skin_shuffle[1:train_num,]
+skin_test <-skin_shuffle[(train_num+1):nrow(skin_shuffle),]
+
+
+
+
+
+
+
+
+
+
+
+
+
+■ 4장. 나이브 베이즈 분류
+
+	* 4장 목차
+		1. 확률에 대한 기본적인 이해 (pdf)
+		2. 나이브 베이즈 알고리즘
+		3. 나이브 베이즈 실습
+			- 독버섯과 정상버섯의 분류
+			- 영화 장르 선호도 분류
+			- 스팸메일과 햄메일의 분류(책 실습)  ──▶ text mining 실습
+		4. 
+
+
+
+
+
+★ 1. 확률에 대한 기본적인 이해 (pdf)
+
+	pdf 로 설명
+
+
+
+
+
+
+★ 2. 나이브 베이즈 알고리즘 (p 152)
+
+	       비아그라(w1)      돈(w2)        식료품(w3)    주소삭제(w4)
+	 우도    Yes    No      Yes    No        Yes    No    Yes    No   
+	 스팸    4/20  16/20   10/20  10/20   0/20  20/20   12/20  8/20     20 
+	 햄      1/80  79/80   14/80  66/80   8/80  71/80   23/80  57/80    80  
+	 총합   5/100  95/100  24/100 76/100  8/100  9/100  35/100  65/100  100 
+
+		* 스팸 메일과 햄 메일을 정확하게 분류하기 위해서는 ?
+			비아그라 단어 하나만 가지고 스팸메일인지를 분류하면 정확하게 분류가 안될 수
+			있으니 다른 단어들도 같이 포함시켜서 확률을 구해야 한다.
+
+			예 : 비아그라, 돈, 식료품, 주소삭제
+
+			용어 : ㄱ : 존재하지 않는다 (부정)
+			       ㅋ : 존재한다. (긍정)
+
+			예제 : 비아그라와 주소삭제라는 단어는 포함되어있는 메일인데 돈과 식료품은
+			       포함하지 않는 메일은 스팸일 확률이 어떻게 되는가?
+
+	p( 스팸 | 비아그라 ∩ ㄱ돈 ∩ ㄱ식료품 ∩ 주소삭제 ) = ?
+
+	   p( 비아그라 ∩ ㄱ돈 ∩ ㄱ식료품 ∩ 주소삭제 | 스팸 ) * p(스팸)
+	= ────────────────────────────────
+                   p(비아그라 ∩ ㄱ돈 ∩ ㄱ식료품 ∩ 주소삭제)
+
+	   p(비아그라|스팸) * p(ㄱ돈|스팸) * p(ㄱ식료품|스팸) * p(주소삭제|스팸) * p(스팸)
+	= ──────────────────────────────────────────
+		           p(비아그라) * p(ㄱ돈) * p(ㄱ식료품) * p(주소삭제)
+
+	   4/20 * 10/20 * 20/20 * 12/20 * 20/100
+	= ──────────────────── = 0.85	(스팸일 확률)
+	     5/100 * 76/100 * 91/100 * 35/100	
+
+
+	       비아그라(w1)      돈(w2)        식료품(w3)    주소삭제(w4)
+	 우도    Yes    No      Yes    No        Yes    No    Yes    No   
+	 스팸    4/20  16/20   10/20  10/20   0/20  20/20   12/20  8/20     20 
+	 햄      1/80  79/80   14/80  66/80   8/80  71/80   23/80  57/80    80  
+	 총합  5/100  95/100  24/100 76/100  8/100  9/100  35/100  65/100  100
+	
+	* 스팸일 확률 ? 스팸일 우도 ?
+	
+	 P(비아그라|스팸) * P(ㄱ돈|스팸) * P(ㄱ식료품|스팸) * P(주소삭제|스팸) * P(스팸)
+	       4/20            10/20              20/20             12/20          20/100
+	
+	 = 0.012 
+	
+	* 햄일 확률 ? 햄일 우도 ? 
+	
+	
+	 P(비아그라|햄) * P(ㄱ돈|햄) * P(ㄱ식료품|햄) * P(주소삭제|햄) * P(햄 )
+	     1/80            66/80         71/80            23/80         80/100
+	 
+	 = 0.002    
+	
+	
+	                        0.012
+	 스팸일 우도 ?  ------------------------- = 0.85
+	                    0.012 + 0.002   
+	 
+	                     0.002  
+	 햄일 우도  ?   ------------------------- = 0.15
+	                   0.012 + 0.002   
+	 
+	
+	
+	왜  분모가   P( 비아그라 ∩ ㄱ돈 ∩ ㄱ식료품 ∩ 주소삭제) 가 
+	            스팸의 우도 + 햄의 우도와 같냐면 ?  
+	
+	 증명하면 ?
+	
+	   P( 비아그라 ∩ ㄱ돈 ∩ ㄱ식료품 ∩ 주소삭제) 를 그냥
+	   
+	   비아그라 하나면 보고 
+		
+	   P(비아그라) = P(스팸 ∩ 비아그라) + P(햄 ∩ 비아그라)
+	               = P(비아 | 스팸) x P(스팸) + P(비아|햄) x P(햄)
+	                   스팸의 우도               햄의 우도 
+	     
+	
+	 정리하면 비아그라, 주소삭제가 포함되어져 있고 돈과 식료품이 포함되지 
+	 않은 메세지가 스팸일 확률은 85% 가 된다. 
+
+
+
